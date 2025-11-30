@@ -119,34 +119,10 @@ function startAnimation(aspectRatio, gl, program, textures) {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
-
-    // camera.rotation[1] = deg2Rad(rotation)
-
     gl.uniformMatrix4fv(matrixLocation, false, camera.getProjectionViewMatrix());
 
     // 各面を描画
     minecraft_player_model.forEach(square => {
-      if (square.tag?.includes("rightLeg")) {
-        square.effect = {
-          center: [0, 0, 0],
-          angle: [deg2Rad(0), deg2Rad(-rotation), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
-          offset: [0, 0, 0],
-        }
-      }
-      if (square.tag?.includes("leftLeg")) {
-        square.effect = {
-          center: [0, 0, 0],
-          angle: [deg2Rad(0), deg2Rad(rotation), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
-          offset: [0, 0, 0],
-        }
-      }
-
-
-
       const data = square.toWebGL(textures)
       // 頂点座標
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
