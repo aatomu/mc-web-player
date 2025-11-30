@@ -5,12 +5,60 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
 )
 
+var (
+	multi multiplexer
+)
+
+type multiplexer struct {
+	i   int
+	sub map[int]chan [3]string
+	mu  sync.Mutex
+}
+
 func main() {
+	multi = multiplexer{
+		i:   0,
+		sub: map[int]chan [3]string{},
+	}
+
+	go func() {
+		time.Sleep(1000 * time.Millisecond)
+		capture := getWatcher()
+		var buf [3]string
+		for {
+			select {
+			case m := <-capture.mouse.Vscroll:
+				buf = [3]string{"mouse", "Vscroll", fmt.Sprintf("%d", m)}
+			case m := <-capture.mouse.Hscroll:
+				buf = [3]string{"mouse", "Hscroll", fmt.Sprintf("%d", m)}
+			case m := <-capture.mouse.down:
+				buf = [3]string{"mouse", "down", m}
+			case m := <-capture.mouse.up:
+				buf = [3]string{"mouse", "up", m}
+			case m := <-capture.mouse.move:
+				buf = [3]string{"mouse", "move", fmt.Sprintf("[%d,%d]", m[0], m[1])}
+			case k := <-capture.keyboard.down:
+				buf = [3]string{"keyboard", "down", k}
+			case k := <-capture.keyboard.up:
+				buf = [3]string{"keyboard", "up", k}
+			}
+			log.Println(buf)
+
+			for _, s := range multi.sub {
+				select {
+				case s <- buf:
+				default:
+				}
+			}
+		}
+	}()
+
 	listener, _ := net.Listen("tcp", "127.0.0.1:0")
 	defer listener.Close()
 
@@ -28,26 +76,22 @@ func main() {
 }
 
 func handleWebsocket(ws *websocket.Conn) {
-	var e = ""
-	capture := getWatcher()
-	for {
-		select {
-		case m := <-capture.mouse.Vscroll:
-			e = fmt.Sprintf("mouse,Vscroll,%d", m)
-		case m := <-capture.mouse.Hscroll:
-			e = fmt.Sprintf("mouse,Hscroll,%d", m)
-		case m := <-capture.mouse.up:
-			e = fmt.Sprintf("mouse,up,%s", m)
-		case m := <-capture.mouse.down:
-			e = fmt.Sprintf("mouse,down,%s", m)
-		case m := <-capture.mouse.move:
-			e = fmt.Sprintf("mouse,move,[%d,%d]", m[0], m[1])
-		case k := <-capture.keyboard.down:
-			e = fmt.Sprintf("keyboard,down,%s", k)
-		case k := <-capture.keyboard.up:
-			e = fmt.Sprintf("keyboard,up,%s", k)
-		}
-		log.Println(e)
-		websocket.Message.Send(ws, e)
+	multi.mu.Lock()
+	id := multi.i
+	multi.i++
+	ch := make(chan [3]string)
+	multi.sub[id] = ch
+	multi.mu.Unlock()
+
+	defer func() {
+		ws.Close()
+
+		multi.mu.Lock()
+		delete(multi.sub, id)
+		multi.mu.Unlock()
+	}()
+
+	for e := range ch {
+		websocket.Message.Send(ws, fmt.Sprintf("%s,%s,%s", e[0], e[1], e[2]))
 	}
 }
