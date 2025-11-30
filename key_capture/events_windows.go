@@ -24,9 +24,11 @@ var (
 	procGetRawInputData         = user32.NewProc("GetRawInputData")
 	// デバイス情報を取得するための関数を追加
 	procGetRawInputDeviceInfoW = user32.NewProc("GetRawInputDeviceInfoW")
+
+	event CaptureEvent
 )
 
-// 定義済み定数
+// MARK: 定義済み定数
 const (
 	WM_INPUT = 0x00FF
 
@@ -61,7 +63,7 @@ const (
 	RI_MOUSE_HWHEEL             = 0x0800 // 水平ホイールスクロール (X軸)
 )
 
-// 構造体定義
+// MARK: 構造体定義
 
 type MSG struct {
 	Hwnd    windows.Handle
@@ -128,7 +130,7 @@ type RAWINPUT struct {
 	data [1]byte
 }
 
-// GetModuleHandle の自前実装
+// MARK: GetModuleHandle()
 func getModuleHandle(moduleName *uint16) windows.Handle {
 	kernel32 := windows.NewLazySystemDLL("kernel32.dll")
 	proc := kernel32.NewProc("GetModuleHandleW")
@@ -141,13 +143,7 @@ func utf16Ptr(s string) *uint16 {
 	return p
 }
 
-func checkErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// getDeviceName: デバイスハンドルからデバイス名（パス）を取得する
+// MARK: getDeviceName()
 func getDeviceName(hDevice windows.Handle) string {
 	var requiredSize uint32
 
@@ -189,7 +185,7 @@ func getDeviceName(hDevice windows.Handle) string {
 	return fmt.Sprintf("Device (Handle: 0x%X)", hDevice)
 }
 
-// WndProc (ウィンドウプロシージャ)
+// MARK: WndProc()
 func wndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	if msg == WM_INPUT {
 		var dataSize uint32
@@ -232,12 +228,11 @@ func wndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 			}
 			kb := (*RAWKEYBOARD)(unsafe.Pointer(&buf[headerSize]))
 
-			action := "Down"
 			if kb.Flags&0x01 != 0 {
-				action = "Up"
+				event.keyboard.up <- fmt.Sprintf("0x%X", kb.VKey)
+			} else {
+				event.keyboard.down <- fmt.Sprintf("0x%X", kb.VKey)
 			}
-
-			fmt.Printf("[KB] Device: %s | VKey=0x%X (MakeCode: 0x%X, Action: %s)\n", deviceName, kb.VKey, kb.MakeCode, action)
 
 		case RIM_TYPEMOUSE:
 			// マウス入力の処理
@@ -259,14 +254,7 @@ func wndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 				return ret
 			}
 
-			// デバイス名と共に出力
-			fmt.Printf("[Mouse] Device: %s | RawFlags: 0x%04X | RawButtons: 0x%04X | ulButtons: 0x%08X | ",
-				deviceName, usButtonFlags, mouse.ulRawButtons, mouse.ulButtons)
-
 			// --- ボタン状態のチェック ---
-
-			var actionPrinted bool
-
 			// ホイールスクロールの判定ロジックを修正
 			isVWheel := (usButtonFlags&RI_MOUSE_WHEEL != 0) || (usButtonData != 0 && usButtonFlags&RI_MOUSE_HWHEEL == 0)
 			isHWheel := usButtonFlags&RI_MOUSE_HWHEEL != 0
@@ -274,88 +262,41 @@ func wndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 			// 垂直ホイールスクロール
 			if isVWheel {
 				delta := int16(usButtonData)
-				// RI_MOUSE_WHEELフラグが立っていない場合でも、usButtonData (デルタ値) がゼロでなければホイールと見なす
-				if delta != 0 {
-					direction := "Up"
-					if delta < 0 {
-						direction = "Down"
-					}
-					fmt.Printf("V-Scroll %s (Delta: %d), ", direction, delta)
-					actionPrinted = true
-					// ホイールイベントとして処理したので、ボタンフラグからは除外する (表示上、ホイールだけをハイライトするため)
-					usButtonFlags &^= RI_MOUSE_WHEEL
-				}
+				event.mouse.Vscroll <- delta
+				// ホイールイベントとして処理したので、ボタンフラグからは除外する (表示上、ホイールだけをハイライトするため)
+				usButtonFlags &^= RI_MOUSE_WHEEL
 			}
 
 			// 水平ホイールスクロール
 			if isHWheel {
 				delta := int16(usButtonData)
-				if delta != 0 {
-					direction := "Right"
-					if delta < 0 {
-						direction = "Left"
-					}
-					fmt.Printf("H-Scroll %s (Delta: %d), ", direction, delta)
-					actionPrinted = true
-				}
+				event.mouse.Hscroll <- delta
 			}
 
 			// 残りのボタン状態のチェック (フラグが0x0040以外であることを確認)
 			if usButtonFlags&RI_MOUSE_LEFT_BUTTON_DOWN != 0 {
-				fmt.Print("LBUTTON Down, ")
-				actionPrinted = true
+				event.mouse.down <- "L"
 			}
 			if usButtonFlags&RI_MOUSE_LEFT_BUTTON_UP != 0 {
-				fmt.Print("LBUTTON Up, ")
-				actionPrinted = true
+				event.mouse.up <- "L"
 			}
 			if usButtonFlags&RI_MOUSE_RIGHT_BUTTON_DOWN != 0 {
-				fmt.Print("RBUTTON Down, ")
-				actionPrinted = true
+				event.mouse.down <- "R"
 			}
 			if usButtonFlags&RI_MOUSE_RIGHT_BUTTON_UP != 0 {
-				fmt.Print("RBUTTON Up, ")
-				actionPrinted = true
+				event.mouse.up <- "R"
 			}
 			if usButtonFlags&RI_MOUSE_MIDDLE_BUTTON_DOWN != 0 {
-				fmt.Print("MBUTTON Down, ")
-				actionPrinted = true
+				event.mouse.down <- "M"
 			}
 			if usButtonFlags&RI_MOUSE_MIDDLE_BUTTON_UP != 0 {
-				fmt.Print("MBUTTON Up, ")
-				actionPrinted = true
-			}
-			// XButton (サイドボタンなど)
-			if usButtonFlags&RI_MOUSE_XBUTTON1_DOWN != 0 {
-				fmt.Print("XBUTTON1 Down, ")
-				actionPrinted = true
-			}
-			if usButtonFlags&RI_MOUSE_XBUTTON1_UP != 0 {
-				fmt.Print("XBUTTON1 Up, ")
-				actionPrinted = true
-			}
-			if usButtonFlags&RI_MOUSE_XBUTTON2_DOWN != 0 {
-				fmt.Print("XBUTTON2 Down, ")
-				actionPrinted = true
-			}
-			if usButtonFlags&RI_MOUSE_XBUTTON2_UP != 0 {
-				fmt.Print("XBUTTON2 Up, ")
-				actionPrinted = true
+				event.mouse.down <- "U"
 			}
 
 			// マウス移動
 			if mouse.lLastX != 0 || mouse.lLastY != 0 {
-				fmt.Printf("Move: dx=%d dy=%d (Flags: 0x%X)", mouse.lLastX, mouse.lLastY, mouse.usFlags)
-				actionPrinted = true
+				event.mouse.move <- [2]int32{mouse.lLastX, mouse.lLastY}
 			}
-
-			// 何もアクションが検出されなかった場合
-			if !actionPrinted {
-				fmt.Print("No Action")
-			}
-
-			// 末尾に改行を追加
-			fmt.Println()
 
 		case RIM_TYPEHID:
 			// HIDデバイスの処理
@@ -370,7 +311,20 @@ func wndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	return ret
 }
 
-func main() {
+func getWatcher() CaptureEvent {
+	event = CaptureEvent{
+		mouse: MouseEvent{
+			move:    make(chan [2]int32),
+			down:    make(chan string),
+			up:      make(chan string),
+			Vscroll: make(chan int16),
+			Hscroll: make(chan int16),
+		},
+		keyboard: KeyboardEvent{
+			down: make(chan string),
+			up:   make(chan string),
+		},
+	}
 	// 必要なハンドルとコールバックの設定
 	hInstance := getModuleHandle(nil)
 
@@ -385,7 +339,7 @@ func main() {
 	// ウィンドウクラスの登録
 	ret, _, err := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wcex)))
 	if ret == 0 {
-		log.Fatal("RegisterClassEx failed:", err)
+		log.Panic("RegisterClassEx failed:", err)
 	}
 
 	// ダミーウィンドウの作成
@@ -400,7 +354,7 @@ func main() {
 		0,                  // lpParam
 	)
 	if hwnd == 0 {
-		log.Fatal("CreateWindowEx failed:", err)
+		log.Panic("CreateWindowEx failed:", err)
 	}
 
 	// Raw Input 登録
@@ -416,27 +370,26 @@ func main() {
 		unsafe.Sizeof(RAWINPUTDEVICE{}),
 	)
 	if ret == 0 {
-		log.Fatal("RegisterRawInputDevices failed:", err)
+		log.Panic("RegisterRawInputDevices failed:", err)
 	}
 
-	fmt.Println("Raw input registered to window handle:", hwnd)
-	fmt.Println("Running message loop. Input will be printed here even if the window is not focused.")
+	go func() {
+		var msg MSG
+		for {
+			ret, _, _ := procGetMessageW.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
 
-	// メッセージループ
-	var msg MSG
-	for {
-		ret, _, _ := procGetMessageW.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
+			if ret < 0 {
+				log.Panicf("GetMessageW failed with error code: %d", ret)
+				break
+			}
+			if ret == 0 { // WM_QUIT
+				break
+			}
 
-		if ret < 0 {
-			log.Printf("GetMessageW failed with error code: %d", ret)
-			break
+			procTranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
+			procDispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
 		}
-		if ret == 0 { // WM_QUIT
-			break
-		}
+	}()
 
-		procTranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
-		procDispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
-	}
-	fmt.Println("Message loop finished.")
+	return event
 }
