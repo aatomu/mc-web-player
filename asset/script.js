@@ -75,16 +75,6 @@ async function main() {
   const textures = await loadTextures(gl, {
     "skin": "./template.png"
   })
-  
-  // Mirror Skin
-  if (textures["skin"].height== 32) {
-
-  }
-  // Custom Skin
-  if (textures["skin"].height== 32) {
-
-  }
-
   // アニメーション開始
   startAnimation(canvas.height / canvas.width, gl, program, textures);
 }
@@ -105,7 +95,7 @@ function startAnimation(aspectRatio, gl, program, textures) {
   const matrixLocation = gl.getUniformLocation(program, "u_matrix");
 
   const camera = new Camera({
-    offset: [0, 0, -100],
+    offset: [0, 0, -50],
     rotation: [0, 0, 0]
   })
   camera.setPerspective(deg2Rad(45), aspectRatio, 0.1, 500);
@@ -115,7 +105,7 @@ function startAnimation(aspectRatio, gl, program, textures) {
 
   let rotation = 0
   function render() {
-    rotation += 0.5;
+    rotation += 5;
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
@@ -123,6 +113,51 @@ function startAnimation(aspectRatio, gl, program, textures) {
 
     // 各面を描画
     minecraft_player_model.forEach(square => {
+      if (square.tag?.includes("head")) {
+        square.effect = {
+          center: [0, 0, 0],
+          angle: [deg2Rad(0), Math.sin(deg2Rad(rotation/5)), 0],
+          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
+          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          offset: [0, 0, 0],
+        }
+      }
+      if (square.tag?.includes("rightArm")) {
+        square.effect = {
+          center: [0, 0, 0],
+          angle: [Math.sin(deg2Rad(rotation)), deg2Rad(0), 0],
+          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
+          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          offset: [0, 0, 0],
+        }
+      }
+      if (square.tag?.includes("leftArm")) {
+        square.effect = {
+          center: [0, 0, 0],
+          angle: [Math.sin(deg2Rad(-rotation)), deg2Rad(0), 0],
+          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
+          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          offset: [0, 0, 0],
+        }
+      }
+      if (square.tag?.includes("rightLeg")) {
+        square.effect = {
+          center: [0, 0, 0],
+          angle: [Math.sin(deg2Rad(-rotation))*1.25, deg2Rad(0), 0],
+          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
+          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          offset: [0, 0, 0],
+        }
+      }
+      if (square.tag?.includes("leftLeg")) {
+        square.effect = {
+          center: [0, 0, 0],
+          angle: [Math.sin(deg2Rad(rotation))*1.25, deg2Rad(0), 0],
+          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
+          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          offset: [0, 0, 0],
+        }
+      }
       const data = square.toWebGL(textures)
       // 頂点座標
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
