@@ -18,7 +18,7 @@ const template_uv = {
       }),
     ),
     // 64x64
-    leftArmWideX64: {},
+    leftArmWideX64: getUVbySize([4, 12, 4], "skin", [32, 48]),
     // 64x32
     leftArmSlimX32: {},
     // 64x64
@@ -433,6 +433,45 @@ const model = {
       tag: ["arm", "leftArm"],
       ...template_surface.leftArmWide.bottom,
       uv: template_uv.base.leftArmWideX32.bottom
+    }),
+  ],
+  leftArmWideX64: [
+    // MARK: > LeftArm/Front
+    new Square({
+      tag: ["arm", "leftArm"],
+      ...template_surface.leftArmWide.front,
+      uv: template_uv.base.leftArmWideX64.front
+    }),
+    // MARK: > LeftArm/Right
+    new Square({
+      tag: ["arm", "leftArm"],
+      ...template_surface.leftArmWide.right,
+      uv: template_uv.base.leftArmWideX64.right
+    }),
+    // MARK: > LeftArm/Back
+    new Square({
+      tag: ["arm", "leftArm"],
+      length: [4, 12],
+      ...template_surface.leftArmWide.back,
+      uv: template_uv.base.leftArmWideX64.back
+    }),
+    // MARK: > LeftArm/Left
+    new Square({
+      tag: ["arm", "leftArm"],
+      ...template_surface.leftArmWide.left,
+      uv: template_uv.base.leftArmWideX64.left
+    }),
+    // MARK: > LeftArm/Top
+    new Square({
+      tag: ["arm", "leftArm"],
+      ...template_surface.leftArmWide.top,
+      uv: template_uv.base.leftArmWideX64.top
+    }),
+    // MARK: > LeftArm/Bottom
+    new Square({
+      tag: ["arm", "leftArm"],
+      ...template_surface.leftArmWide.bottom,
+      uv: template_uv.base.leftArmWideX64.bottom
     }),
   ],
   rightLeg: [
