@@ -99,7 +99,7 @@ func handleWebsocket(ws *websocket.Conn) {
 	multi.mu.Lock()
 	id := multi.i
 	multi.i++
-	ch := make(chan [3]string)
+	ch := make(chan [3]string, 10)
 	multi.sub[id] = ch
 	multi.mu.Unlock()
 
