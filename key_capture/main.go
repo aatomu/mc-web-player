@@ -8,11 +8,18 @@ import (
 	"sync"
 	"time"
 
+	hook "github.com/robotn/gohook"
 	"golang.org/x/net/websocket"
 )
 
 var (
 	multi multiplexer
+)
+
+const (
+	MouseLeft uint16 = iota + 1
+	MouseRight
+	MouseMiddle
 )
 
 type multiplexer struct {
@@ -28,25 +35,38 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(1000 * time.Millisecond)
-		capture := getWatcher()
+		evCh := hook.Start()
+		defer hook.End()
+
 		var buf [3]string
-		for {
-			select {
-			case m := <-capture.mouse.Vscroll:
-				buf = [3]string{"mouse", "Vscroll", fmt.Sprintf("%d", m)}
-			case m := <-capture.mouse.Hscroll:
-				buf = [3]string{"mouse", "Hscroll", fmt.Sprintf("%d", m)}
-			case m := <-capture.mouse.down:
-				buf = [3]string{"mouse", "down", m}
-			case m := <-capture.mouse.up:
-				buf = [3]string{"mouse", "up", m}
-			case m := <-capture.mouse.move:
-				buf = [3]string{"mouse", "move", fmt.Sprintf("[%d,%d]", m[0], m[1])}
-			case k := <-capture.keyboard.down:
-				buf = [3]string{"keyboard", "down", k}
-			case k := <-capture.keyboard.up:
-				buf = [3]string{"keyboard", "up", k}
+		for ev := range evCh {
+			switch ev.Kind {
+			case hook.KeyDown:
+				buf = [3]string{"keyboard", "down", hook.RawcodetoKeychar(ev.Rawcode)}
+			case hook.KeyUp:
+				buf = [3]string{"keyboard", "up", hook.RawcodetoKeychar(ev.Rawcode)}
+			case hook.MouseDown:
+				buf = [3]string{"mouse", "down", ""}
+				switch ev.Button {
+				case MouseLeft:
+					buf[2] = "Left"
+				case MouseMiddle:
+					buf[2] = "Middle"
+				case MouseRight:
+					buf[2] = "Right"
+				}
+			case hook.MouseUp:
+				buf = [3]string{"mouse", "up", ""}
+				switch ev.Button {
+				case MouseLeft:
+					buf[2] = "Left"
+				case MouseMiddle:
+					buf[2] = "Middle"
+				case MouseRight:
+					buf[2] = "Right"
+				}
+			case hook.MouseMove:
+				buf = [3]string{"mouse", "move", fmt.Sprintf("[%d,%d]", ev.X, ev.Y)}
 			}
 			log.Println(buf)
 
