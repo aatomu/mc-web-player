@@ -1,11 +1,19 @@
-# [WIP] mc-web-player
-キーボード・操作をcaptureして自分のskinが動く
+# [WIP] stream-kit
+
+キーボード・操作を capture して自分の skin が動く
 
 > [!CAUTION]
-> このレポジトリーは ガッツリAI(Google Gemini/OpenAI ChatGPT/Anthropic Claude)を利用しています。
+> このレポジトリーは ガッツリ AI(Google Gemini/OpenAI ChatGPT/Anthropic Claude)を利用しています。
 > 気になる方は使わないでください。
 
 # Build Environment
+
 - `golang`: `go1.20.3 windows/amd64`
 - `gcc`: `gcc.exe (tdm64-1) 10.3.0`
-  - \*[`github.com/robotn/gohook`](https://pkg.go.dev/github.com/robotn/gohook@v0.42.2) has required `gcc`
+
+## Using
+
+- Key Logger:
+  - https://github.com/robotn/gohook
+- System Tray
+  - https://github.com/fyne-io/systray
