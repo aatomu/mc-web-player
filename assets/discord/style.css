@@ -1,0 +1,169 @@
+:root {
+  --name-radius: 3px;
+  /* 名前の角丸 */
+  --border-size: 5px;
+  /* 枠線の幅 */
+  --border-color: #3ba53b;
+  /* 枠線の色 */
+  --duration-speed: 50ms;
+  /* Speaking */
+  --jump-height: 15px;
+  /* Speaking Animation */
+  --icon-size: 128px;
+  --decoration-size: calc(var(--icon-size) * 1.2);
+  /* User Icon Size*/
+  --message-background: #313338
+    /* メッセージの後ろの色 */
+}
+
+.root {
+  background-color: transparent;
+  width: fit-content;
+}
+
+.channel {
+  background-color: #AAA;
+  border-radius: 8px;
+  margin: 10px;
+  padding: 0 10px;
+
+  font-weight: bold;
+  font-size: 150%;
+}
+
+.users {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.users .user {
+  position: relative;
+  height: var(--icon-size);
+  width: var(--icon-size);
+  margin: 8px;
+}
+
+.users .icon {
+  position: relative;
+  box-sizing: border-box;
+
+  bottom: 0px;
+  height: 100%;
+  aspect-ratio: 1/1;
+
+  filter: brightness(75%);
+  border: var(--border-size) solid transparent;
+  border-radius: 32px;
+}
+
+.users .speaking .icon {
+  filter: brightness(100%);
+  animation-name: speak-now;
+  animation-duration: calc(1000ms - var(--duration-speed) * 10);
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  border: var(--border-size) solid var(--border-color);
+}
+
+.users .user:has(.decoration) .icon {
+  border-radius: 64px;
+}
+
+.users .decoration {
+  position: absolute;
+  top: calc((var(--decoration-size) - var(--icon-size)) / 2 * -1);
+  left: calc((var(--decoration-size) - var(--icon-size)) / 2* -1);
+
+  height: var(--decoration-size);
+  aspect-ratio: 1/1;
+}
+
+.users .nick {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  box-sizing: border-box;
+
+  max-width: 100%;
+  padding: 0 10px;
+
+  background-color: rgba(192, 192, 192, 0.9);
+  border-radius: 8px;
+  font-weight: bold;
+
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.users .name {
+  display: none;
+
+  font-weight: bold;
+
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* しゃべってるときのアニメーション設定 */
+@keyframes speak-now {
+  0% {
+    bottom: 0px;
+  }
+
+  50% {
+    bottom: var(--jump-height);
+  }
+
+  100% {
+    bottom: 0px;
+  }
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: white;
+}
+
+.messages * {
+  vertical-align: middle;
+}
+
+.messages .message {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 4px 0;
+
+  background-color: var(--message-background);
+  border-radius: 1ch;
+}
+
+.messages .icon {
+  margin: 2px;
+  height: 3ch;
+  width: 3ch;
+
+  border-radius: 1.5ch;
+}
+
+.messages .nick {
+  font-weight: bold;
+  margin: 0 0.5ch;
+}
+
+.messages .name {
+  display: none;
+}
+
+.messages .timestamp {
+  color: gray;
+  font-size: small;
+  margin: 0 1ch;
+}
