@@ -20,59 +20,55 @@ type multiplexer struct {
 	mu  sync.Mutex
 }
 
-func newWatcher() (m multiplexer) {
+func newWatcher() {
 	log.Println("main.newWatcher()")
-	m = multiplexer{
+	multi = multiplexer{
 		i:   0,
 		sub: map[int]chan [3]string{},
 	}
 
-	go func() {
-		evCh := hook.Start()
-		defer hook.End()
+	evCh := hook.Start()
+	defer hook.End()
 
-		var buf [3]string
-		for ev := range evCh {
-			switch ev.Kind {
-			case hook.KeyDown:
-				buf = [3]string{"keyboard", "down", hook.RawcodetoKeychar(ev.Rawcode)}
-			case hook.KeyUp:
-				buf = [3]string{"keyboard", "up", hook.RawcodetoKeychar(ev.Rawcode)}
-			case hook.MouseDown:
-				buf = [3]string{"mouse", "down", ""}
-				switch ev.Button {
-				case MouseLeft:
-					buf[2] = "Left"
-				case MouseMiddle:
-					buf[2] = "Middle"
-				case MouseRight:
-					buf[2] = "Right"
-				}
-			case hook.MouseUp:
-				buf = [3]string{"mouse", "up", ""}
-				switch ev.Button {
-				case MouseLeft:
-					buf[2] = "Left"
-				case MouseMiddle:
-					buf[2] = "Middle"
-				case MouseRight:
-					buf[2] = "Right"
-				}
-			case hook.MouseMove:
-				buf = [3]string{"mouse", "move", fmt.Sprintf("[%d,%d]", ev.X, ev.Y)}
+	var buf [3]string
+	for ev := range evCh {
+		switch ev.Kind {
+		case hook.KeyDown:
+			buf = [3]string{"keyboard", "down", hook.RawcodetoKeychar(ev.Rawcode)}
+		case hook.KeyUp:
+			buf = [3]string{"keyboard", "up", hook.RawcodetoKeychar(ev.Rawcode)}
+		case hook.MouseDown:
+			buf = [3]string{"mouse", "down", ""}
+			switch ev.Button {
+			case MouseLeft:
+				buf[2] = "Left"
+			case MouseMiddle:
+				buf[2] = "Middle"
+			case MouseRight:
+				buf[2] = "Right"
 			}
-			if *debug {
-				log.Println(buf)
+		case hook.MouseUp:
+			buf = [3]string{"mouse", "up", ""}
+			switch ev.Button {
+			case MouseLeft:
+				buf[2] = "Left"
+			case MouseMiddle:
+				buf[2] = "Middle"
+			case MouseRight:
+				buf[2] = "Right"
 			}
+		case hook.MouseMove:
+			buf = [3]string{"mouse", "move", fmt.Sprintf("[%d,%d]", ev.X, ev.Y)}
+		}
+		if *debug {
+			log.Println(buf)
+		}
 
-			for _, s := range multi.sub {
-				select {
-				case s <- buf:
-				default:
-				}
+		for _, s := range multi.sub {
+			select {
+			case s <- buf:
+			default:
 			}
 		}
-	}()
-
-	return
+	}
 }
