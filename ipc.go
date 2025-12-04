@@ -5,7 +5,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"io"
+	"log"
 	"net"
+	"time"
 )
 
 type IPC struct {
@@ -30,18 +32,19 @@ type RpcHandshake struct {
 }
 
 type RpcResponse struct {
-	Code   OPcode
-	Length int
+	Code    OPcode
+	Length  int
+	Message []byte
 }
 
 func NewIPC(clientID string, index int) (ipc *IPC, err error) {
 	// Dial
-	conn, err := dialRPC(index)
+	ipc, err = dialRPC(index)
 	if err != nil {
 		return nil, err
 	}
 	// Sent handshake
-	err = conn.WriteJSON(HandShake, RpcHandshake{
+	err = ipc.WriteJSON(HandShake, RpcHandshake{
 		V:        "1",
 		ClientID: clientID,
 	})
@@ -49,7 +52,26 @@ func NewIPC(clientID string, index int) (ipc *IPC, err error) {
 		return nil, err
 	}
 
-	return conn, nil
+	ipc.startHeartbeat(30 * time.Second)
+	return ipc, nil
+}
+
+func (ipc *IPC) startHeartbeat(interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			err := ipc.WriteJSON(Ping, map[string]interface{}{})
+			log.Println("heatbeat write")
+
+			if err != nil {
+				log.Printf("Heartbeat failed, closing connection: %v\n", err)
+				ipc.Close()
+				return
+			}
+		}
+	}()
 }
 
 func (ipc *IPC) WriteJSON(code OPcode, message any) (err error) {
@@ -107,8 +129,9 @@ func (ipc *IPC) ReadJSON(m any) (res RpcResponse, err error) {
 	}
 
 	return RpcResponse{
-		Code:   OPcode(binary.LittleEndian.Uint32(opcode)),
-		Length: int(messageLength),
+		Code:    OPcode(binary.LittleEndian.Uint32(opcode)),
+		Length:  int(messageLength),
+		Message: message,
 	}, nil
 }
 
