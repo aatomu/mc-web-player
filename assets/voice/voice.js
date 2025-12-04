@@ -1,16 +1,6 @@
 // @ts-check
 
 /**
- * @typedef VoiceState
- * @type {object}
- * @property {boolean} mute mute by server
- * @property {boolean} deaf deaf by server
- * @property {boolean} self_mute mute by self
- * @property {boolean} self_deaf deaf by self
- * @property {boolean} suppress permission to speak denied
- */
-
-/**
  * @param {User} user
  */
 function userAdd(user) {

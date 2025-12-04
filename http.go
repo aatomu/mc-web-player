@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,6 +18,14 @@ func runHttpServer() {
 	mux := http.NewServeMux()
 	mux.Handle("/ws/key", websocket.Handler(handleKeySocket))
 	mux.Handle("/ws/discord", websocket.Handler(handleDiscordSocket))
+	mux.HandleFunc("/env", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		encoder.Encode(map[string]any{
+			"client_id":     config.Discord.Id,
+			"client_secret": config.Discord.Secret,
+		})
+	})
 	mux.Handle("/", fileServer)
 
 	httpServer = &http.Server{
@@ -34,6 +43,43 @@ func runHttpServer() {
 }
 
 func handleDiscordSocket(ws *websocket.Conn) {
+	defer ws.Close()
+
+	ipc, err := NewIPC(config.Discord.Id, discordIPC)
+	if err != nil {
+		log.Println("handleDiscordSocket()/connect ipc failed:", err)
+		return
+	}
+
+	go func() {
+		for {
+			rpcRes, err := ipc.ReadJSON(nil)
+			if rpcRes.Code == Pong {
+				continue
+			}
+			if err != nil {
+				return
+			}
+
+			_, err = ws.Write(rpcRes.Message)
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	var rpc DiscordPayload
+	for {
+		err := websocket.JSON.Receive(ws, &rpc)
+		if err != nil {
+			return
+		}
+
+		err = ipc.WriteJSON(Frame, rpc)
+		if err != nil {
+			return
+		}
+	}
 }
 
 func handleKeySocket(ws *websocket.Conn) {
