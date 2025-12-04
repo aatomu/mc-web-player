@@ -72,7 +72,7 @@ func onReady() {
 	// Systray menu
 	mExit := systray.AddMenuItem("Exit", "アプリケーションを終了します")
 	mChange := systray.AddMenuItem("Select Next Discord Client (now:0)", "監視対象のdiscord Desktop Appを変更します")
-	mChange.SetTitle(fmt.Sprintf("Select Next Discord Client (now:%d)", discordPort-DiscordRpcMin+1))
+	mChange.SetTitle(fmt.Sprintf("Select Next Discord Client (now:%d)", discordIPC))
 	go func() {
 		for {
 			select {
@@ -82,9 +82,9 @@ func onReady() {
 
 			case <-mChange.ClickedCh:
 				log.Println("Cliked menu: Select Next Discord Client")
-				discordPort++
-				if discordPort > DiscordRpcMax {
-					discordPort = DiscordRpcMin
+				discordIPC++
+				if discordIPC > DiscordIpcMax {
+					discordIPC = DiscordIpcMin
 				}
 
 				if enableActivity {
@@ -92,7 +92,7 @@ func onReady() {
 						changeClient <- struct{}{}
 					}()
 				}
-				mChange.SetTitle(fmt.Sprintf("Select Next Discord Client (now:%d)", discordPort-DiscordRpcMin+1))
+				mChange.SetTitle(fmt.Sprintf("Select Next Discord Client (now:%d)", discordIPC))
 			}
 		}
 	}()
