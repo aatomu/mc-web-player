@@ -7,7 +7,7 @@
 // * MARK: Define Cubes
 /** @type {Square[]} */
 const minecraft_player_model = [
-  ...model.axis,
+  // ...model.axis,
   ...model.heads,
   ...model.body,
   ...model.rightArmWide,
@@ -17,6 +17,25 @@ const minecraft_player_model = [
   // ...model.leftLegX32,
   ...model.leftLegX64,
 ]
+
+let animation_control = {
+  walk: {
+    isAnimation: false,
+    timer: 0,
+    scale: 0,
+  },
+  move: {
+    front: false,
+    back: false,
+    right: false,
+    left: false,
+  },
+  facing: {
+    prevMousePos: [0, 0],
+    nowMousePos: [0, 0],
+    rotation: [0, 0],
+  }
+}
 
 async function main() {
   // * MARK: Canvas Initialize
@@ -73,10 +92,12 @@ async function main() {
 
   // 画像が読み込まれたら描画開始
   const textures = await loadTextures(gl, {
-    "skin": "./template.png"
+    "skin": "./skin.png"
   })
   // アニメーション開始
   startAnimation(canvas.height / canvas.width, gl, program, textures);
+
+  connectWebsocket()
 }
 
 /**
@@ -106,6 +127,42 @@ function startAnimation(aspectRatio, gl, program, textures) {
   let rotation = 0
   function render() {
     rotation += 5;
+    // あまたを自動で元に戻す
+    if (animation_control.facing.rotation[0] > 5) {
+      animation_control.facing.rotation[0] -= 0.5
+    }
+    if (animation_control.facing.rotation[0] < -5) {
+      animation_control.facing.rotation[0] += 0.5
+    }
+    if (animation_control.facing.rotation[1] > 5) {
+      animation_control.facing.rotation[1] -= 0.5
+    }
+    if (animation_control.facing.rotation[1] < -5) {
+      animation_control.facing.rotation[1] += 0.5
+    }
+    // 手足の動き
+    // 1.動かすべき?
+    animation_control.walk.isAnimation = animation_control.move.front || animation_control.move.back || animation_control.move.right || animation_control.move.left
+    // 2. 動き出し・動き終わりに合わせて手足の動きを抑える
+    if (animation_control.walk.isAnimation) {
+      if (animation_control.walk.scale < 20) {
+        animation_control.walk.scale++
+      }
+    } else {
+      if (animation_control.walk.scale > 0) {
+        animation_control.walk.scale--
+      } else {
+        animation_control.walk.timer = 0
+      }
+    }
+    const scale = animation_control.walk.scale / 20
+    // 3. 動き中はtimerを増やしていく
+    if (animation_control.walk.isAnimation && animation_control.walk.timer == 0) animation_control.walk.timer = 1
+    if (!animation_control.walk.isAnimation && animation_control.walk.scale == 0) animation_control.walk.timer = 0
+    if (animation_control.walk.timer > 0) {
+      animation_control.walk.timer += 5
+    }
+    const rotate = Math.sin(deg2Rad(animation_control.walk.timer)) * scale
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
@@ -116,45 +173,35 @@ function startAnimation(aspectRatio, gl, program, textures) {
       if (square.tag?.includes("head")) {
         square.effect = {
           center: [0, 0, 0],
-          angle: [deg2Rad(0), Math.sin(deg2Rad(rotation/5)), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          angle: [deg2Rad(animation_control.facing.rotation[1]), deg2Rad(animation_control.facing.rotation[0]), 0],
           offset: [0, 0, 0],
         }
       }
       if (square.tag?.includes("rightArm")) {
         square.effect = {
           center: [0, 0, 0],
-          angle: [Math.sin(deg2Rad(rotation)), deg2Rad(0), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          angle: [rotate, deg2Rad(0), 0],
           offset: [0, 0, 0],
         }
       }
       if (square.tag?.includes("leftArm")) {
         square.effect = {
           center: [0, 0, 0],
-          angle: [Math.sin(deg2Rad(-rotation)), deg2Rad(0), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          angle: [-rotate, deg2Rad(0), 0],
           offset: [0, 0, 0],
         }
       }
       if (square.tag?.includes("rightLeg")) {
         square.effect = {
           center: [0, 0, 0],
-          angle: [Math.sin(deg2Rad(-rotation))*1.25, deg2Rad(0), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          angle: [-rotate* 1.25, deg2Rad(0), 0],
           offset: [0, 0, 0],
         }
       }
       if (square.tag?.includes("leftLeg")) {
         square.effect = {
           center: [0, 0, 0],
-          angle: [Math.sin(deg2Rad(rotation))*1.25, deg2Rad(0), 0],
-          // angle: [deg2Rad(-rotation), deg2Rad(0), 0],
-          // angle: [deg2Rad(90), deg2Rad(0), 0],
+          angle: [rotate * 1.25, deg2Rad(0), 0],
           offset: [0, 0, 0],
         }
       }

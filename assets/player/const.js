@@ -198,9 +198,9 @@ const model = {
       tag: ["head"],
       length: [8, 8],
       base: {
-        center: [0, 0, 4],
+        center: [0, -4, 4],
         angle: [0, 0, 0],
-        offset: [0, 4, 0],
+        offset: [0, 0, 0],
       },
       uv: template_uv.base.head.front
     }),
@@ -209,9 +209,9 @@ const model = {
       tag: ["head"],
       length: [8, 8],
       base: {
-        center: [0, 0, 4],
+        center: [0, -4, 4],
         angle: [0, deg2Rad(-90), 0],
-        offset: [0, 4, 0],
+        offset: [0, 0, 0],
       },
       uv: template_uv.base.head.right
     }),
@@ -220,9 +220,9 @@ const model = {
       length: [8, 8],
       tag: ["head"],
       base: {
-        center: [0, 0, 4],
+        center: [0, -4, 4],
         angle: [0, deg2Rad(-180), 0],
-        offset: [0, 4, 0],
+        offset: [0, 0, 0],
       },
       uv: template_uv.base.head.back
     }),
@@ -231,9 +231,9 @@ const model = {
       tag: ["head"],
       length: [8, 8],
       base: {
-        center: [0, 0, 4],
+        center: [0, -4, 4],
         angle: [0, deg2Rad(-270), 0],
-        offset: [0, 4, 0],
+        offset: [0, 0, 0],
       },
       uv: template_uv.base.head.left
     }),
@@ -242,9 +242,9 @@ const model = {
       tag: ["head"],
       length: [8, 8],
       base: {
-        center: [0, 0, 4],
+        center: [0, 0, 8],
         angle: [deg2Rad(90), 0, 0],
-        offset: [0, 4, 0],
+        offset: [0, 0, 0],
       },
       uv: template_uv.base.head.top
     }),
@@ -253,9 +253,9 @@ const model = {
       tag: ["head"],
       length: [8, 8],
       base: {
-        center: [0, 0, 4],
+        center: [0, 0, 0],
         angle: [deg2Rad(-90), 0, 0],
-        offset: [0, 4, 0],
+        offset: [0, 0, 0],
       },
       uv: template_uv.base.head.bottom
     })

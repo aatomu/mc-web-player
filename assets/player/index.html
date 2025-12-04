@@ -3,12 +3,24 @@
 
 <head>
   <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+    }
+    canvas {
+      display: block;
+      aspect-ratio: 1/1;
+      max-height: 100vh;
+      max-width: 100vw;
+    }
+  </style>
 </head>
 
 <body>
   <canvas id="canvas" width="1000" height="1000"></canvas>
 </body>
 
+<script src="./websocket.js"></script>
 <script src="./webgl.js"></script>
 <script src="./webgl_extend.js"></script>
 <script src="./const.js"></script>
