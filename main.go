@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	DiscordRpcMin = 6463
-	DiscordRpcMax = 6472
+	DiscordIpcMin        = 0
+	DiscordIpcMax        = 9
+	DiscordTokenEndpoint = "https://discord.com/api/oauth2/token"
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 	// Http server
 	httpServer *http.Server
 	// Discord
-	discordPort    = DiscordRpcMin
+	discordIPC     = DiscordIpcMin
 	enableActivity = false
 	changeClient   = make(chan struct{})
 
@@ -90,6 +91,7 @@ func onReady() {
 				if enableActivity {
 					go func() {
 						changeClient <- struct{}{}
+						log.Println("Activity Reset call")
 					}()
 				}
 				mChange.SetTitle(fmt.Sprintf("Select Next Discord Client (now:%d)", discordIPC))
