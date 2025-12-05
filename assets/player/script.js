@@ -2,6 +2,7 @@
 /// <reference path="./webgl.js" />
 /// <reference path="./webgl_extend.js" />
 /// <reference path="./const.js" />
+/// <reference path="./websocket.js" />
 
 
 // * MARK: Define Cubes
@@ -165,7 +166,7 @@ function startAnimation(aspectRatio, gl, program, textures) {
     if (animation_control.walk.timer > 0) {
       animation_control.walk.timer += 5
     }
-    const rotate = Math.sin(deg2Rad(animation_control.walk.timer)) * scale
+    const rotate = Math.sin(deg2Rad(animation_control.walk.timer)) * 0.6 * scale
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
@@ -174,41 +175,41 @@ function startAnimation(aspectRatio, gl, program, textures) {
     // 各面を描画
     minecraft_player_model.forEach(square => {
       if (square.tag?.includes("head")) {
-        square.effect = {
+        square.SetEffect({
           center: [0, 0, 0],
           angle: [deg2Rad(animation_control.facing.rotation[1]), deg2Rad(animation_control.facing.rotation[0]), 0],
           offset: [0, 0, 0],
-        }
+        })
       }
       if (square.tag?.includes("rightArm")) {
-        square.effect = {
+        square.SetEffect({
           center: [0, 0, 0],
           angle: [rotate, deg2Rad(0), 0],
           offset: [0, 0, 0],
-        }
+        })
       }
       if (square.tag?.includes("leftArm")) {
-        square.effect = {
+        square.SetEffect({
           center: [0, 0, 0],
           angle: [-rotate, deg2Rad(0), 0],
           offset: [0, 0, 0],
-        }
+        })
       }
       if (square.tag?.includes("rightLeg")) {
-        square.effect = {
+        square.SetEffect({
           center: [0, 0, 0],
           angle: [-rotate * 1.25, deg2Rad(0), 0],
           offset: [0, 0, 0],
-        }
+        })
       }
       if (square.tag?.includes("leftLeg")) {
-        square.effect = {
+        square.SetEffect({
           center: [0, 0, 0],
           angle: [rotate * 1.25, deg2Rad(0), 0],
           offset: [0, 0, 0],
-        }
+        })
       }
-      const data = square.toWebGL(textures)
+      const data = square.ToWebGL(textures)
       // 頂点座標
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.vertexPositions), gl.STATIC_DRAW);
