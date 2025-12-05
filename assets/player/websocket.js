@@ -9,7 +9,7 @@ function connectWebsocket() {
     console.log("open", e)
   })
   ws.addEventListener("message", (e) => {
-    console.log("message", e)
+    // console.log("message", e)
 
     /** @type {string} */
     const message = e.data
