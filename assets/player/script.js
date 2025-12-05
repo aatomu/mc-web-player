@@ -178,13 +178,14 @@ function startAnimation(aspectRatio, gl, program, textures) {
       }
     }
     const scale = animation_control.walk.scale / 20
+    const rotate = Math.sin(deg2Rad(animation_control.walk.timer*3.5)) * 0.6 * scale
     // 3. 動き中はtimerを増やしていく
     if (animation_control.walk.isAnimation && animation_control.walk.timer == 0) animation_control.walk.timer = 1
-    if (!animation_control.walk.isAnimation && animation_control.walk.scale == 0) animation_control.walk.timer = 0
     if (animation_control.walk.timer > 0) {
       animation_control.walk.timer += 5
     }
-    const rotate = Math.sin(deg2Rad(animation_control.walk.timer)) * 0.6 * scale
+    // 4. 停止時はほぼ足がそろったら
+    if (!animation_control.walk.isAnimation && Math.abs(rotate) < 0.01) animation_control.walk.timer = 0
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(program);
