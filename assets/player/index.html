@@ -5,7 +5,18 @@
   <meta charset="UTF-8">
   <style>
     body {
+      position: relative;
       margin: 0;
+    }
+
+    body * {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    span {
+      color: white;
     }
     canvas {
       display: block;
@@ -13,11 +24,13 @@
       max-height: 100vh;
       max-width: 100vw;
     }
+
   </style>
 </head>
 
 <body>
   <canvas id="canvas" width="1000" height="1000"></canvas>
+  <span id="fpsDisplay">Now loading...</span>
 </body>
 
 <script src="./websocket.js"></script>

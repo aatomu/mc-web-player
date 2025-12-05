@@ -39,6 +39,13 @@ let animation_control = {
   }
 }
 
+// MARK:  FPS
+/** @type {HTMLSpanElement} */
+//@ts-expect-error
+const fpsDisplay = document.getElementById('fpsDisplay');
+let frameCount = 0;          // 1秒間のフレーム数をカウント
+let startTime = 0;           // 1秒の計測を開始した時刻 (タイムスタンプ)
+
 async function main() {
   // * MARK: Canvas Initialize
   /** @type {HTMLCanvasElement} */
@@ -126,9 +133,20 @@ function startAnimation(aspectRatio, gl, program, textures) {
   camera.rotation[1] = deg2Rad(-160)
   camera.rotation[2] = deg2Rad(20)
 
-  let rotation = 0
-  function render() {
-    rotation += 5;
+  function render(timestamp) {
+    if (startTime === 0) {
+      startTime == timestamp
+    }
+    frameCount++
+    const elapsed = timestamp - startTime
+    if (elapsed >= 1000) {
+      const fps = Math.round((frameCount * 1000) / elapsed)
+      fpsDisplay.textContent = "FPS:" + fps.toString()
+
+      frameCount = 0
+      startTime = timestamp
+    }
+
     // あまたを自動で元に戻す
     if (animation_control.facing.updateTimestamp + (1000 * 5) < new Date().getTime()) {
       if (animation_control.facing.rotation[0] > 2) {
