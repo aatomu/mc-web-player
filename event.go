@@ -31,7 +31,7 @@ func newWatcher() {
 	evCh := hook.Start()
 	defer hook.End()
 
-	const mouseMoveRateLimit = 15 * time.Millisecond // 15ms => 約60fps
+	const mouseMoveRateLimit = 30 * time.Millisecond // 30ms => 約30fps
 	var lastMouseMove time.Time
 
 	var buf [3]string
