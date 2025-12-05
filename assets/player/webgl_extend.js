@@ -300,6 +300,8 @@ class Square {
   effect
   /** @type {UV} 使用テクスチャ/UV */
   uv
+  /** @type {{isUpdate:boolean,data: Face?}} */
+  cache
 
   // * MARK: > constructor()
   /**
@@ -328,6 +330,20 @@ class Square {
     this.base = base;
     this.effect = effect;
     this.uv = uv;
+    this.cache = {
+      isUpdate: true,
+      data: null,
+    }
+  }
+
+  // * MARK: > SetEffect
+  /**
+   * 
+   * @param {SquareTransformation} e
+   */
+  SetEffect(e) {
+    this.effect = e
+    this.cache.isUpdate = true
   }
 
   // * MARK: > toWebGL()
@@ -335,57 +351,61 @@ class Square {
    * @param {Textures} textures
    * @returns {Face}
    */
-  toWebGL(textures) {
-    const { length, uv } = this
+  ToWebGL(textures) {
+    if (this.cache.isUpdate) {
+      const { length, uv } = this
 
-    const center = [length[0] / 2, length[1] / 2]
-    // 頂点の定義
-    const V1 = [-center[0], center[1], 0] // 左上
-    const V2 = [center[0], center[1], 0] // 右上
-    const V3 = [center[0], -center[1], 0] // 右下
-    const V4 = [-center[0], -center[1], 0] // 左下
-    // 頂点座標の回転・平行移動
-    const TV1 = this.applyTransformation(V1)
-    const TV2 = this.applyTransformation(V2)
-    const TV3 = this.applyTransformation(V3)
-    const TV4 = this.applyTransformation(V4)
+      const center = [length[0] / 2, length[1] / 2]
+      // 頂点の定義
+      const V1 = [-center[0], center[1], 0] // 左上
+      const V2 = [center[0], center[1], 0] // 右上
+      const V3 = [center[0], -center[1], 0] // 右下
+      const V4 = [-center[0], -center[1], 0] // 左下
+      // 頂点座標の回転・平行移動
+      const TV1 = this.applyTransformation(V1)
+      const TV2 = this.applyTransformation(V2)
+      const TV3 = this.applyTransformation(V3)
+      const TV4 = this.applyTransformation(V4)
 
-    // 2つの三角形に分解
-    const vertexPositions = [
-      ...TV1, ...TV2, ...TV3,
-      ...TV3, ...TV4, ...TV1
-    ];
+      // 2つの三角形に分解
+      const vertexPositions = [
+        ...TV1, ...TV2, ...TV3,
+        ...TV3, ...TV4, ...TV1
+      ];
 
-    // テクスチャ座標の正規化
-    const [u_px_start, v_px_start] = uv.start;
-    const [u_px_end, v_px_end] = uv.end;
+      // テクスチャ座標の正規化
+      const [u_px_start, v_px_start] = uv.start;
+      const [u_px_end, v_px_end] = uv.end;
 
-    const width = textures[uv.alias].width
-    const height = textures[uv.alias].height
-    const u_start = u_px_start / width;
-    const v_start = v_px_start / height;
-    const u_end = u_px_end / width;
-    const v_end = v_px_end / height;
+      const width = textures[uv.alias].width
+      const height = textures[uv.alias].height
+      const u_start = u_px_start / width;
+      const v_start = v_px_start / height;
+      const u_end = u_px_end / width;
+      const v_end = v_px_end / height;
 
-    const UV_TOP_LEFT = [u_start, v_start];
-    const UV_TOP_RIGHT = [u_end, v_start];
-    const UV_BOTTOM_RIGHT = [u_end, v_end];
-    const UV_BOTTOM_LEFT = [u_start, v_end];
+      const UV_TOP_LEFT = [u_start, v_start];
+      const UV_TOP_RIGHT = [u_end, v_start];
+      const UV_BOTTOM_RIGHT = [u_end, v_end];
+      const UV_BOTTOM_LEFT = [u_start, v_end];
 
-    const textureCoordinates = [
-      ...UV_TOP_LEFT,
-      ...UV_TOP_RIGHT,
-      ...UV_BOTTOM_RIGHT,
-      ...UV_BOTTOM_RIGHT,
-      ...UV_BOTTOM_LEFT,
-      ...UV_TOP_LEFT
-    ];
+      const textureCoordinates = [
+        ...UV_TOP_LEFT,
+        ...UV_TOP_RIGHT,
+        ...UV_BOTTOM_RIGHT,
+        ...UV_BOTTOM_RIGHT,
+        ...UV_BOTTOM_LEFT,
+        ...UV_TOP_LEFT
+      ];
 
-    return {
-      uvAliasName: uv.alias,
-      vertexPositions: vertexPositions,
-      textureCoordinates: textureCoordinates
+      this.cache.data = {
+        uvAliasName: uv.alias,
+        vertexPositions: vertexPositions,
+        textureCoordinates: textureCoordinates
+      }
     }
+
+    return this.cache.data
   }
 
   // * MARK: > applyTransfrom()
@@ -397,7 +417,7 @@ class Square {
     // 1. モデル描画用の基礎回転
     const [bx, by, bz] = calcTransformation(V, this.base.center, this.base.angle)
     // 2. アニメーション用の基礎回転
-    let [x, y, z] = calcTransformation([bx,by,bz], this.effect.center, this.effect.angle)
+    let [x, y, z] = calcTransformation([bx, by, bz], this.effect.center, this.effect.angle)
     // 3. オフセットによる移動 (平行移動)
     x += this.base.offset[0] + this.effect.offset[0]
     y += this.base.offset[1] + this.effect.offset[1]
